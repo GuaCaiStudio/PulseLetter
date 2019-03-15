@@ -1,7 +1,8 @@
 import processing.serial.*;
 import processing.pdf.*;
 
-Serial myPort;
+Serial sensorPort;
+Serial printerPort;
 PFont font;
 int xPos = 1;
 float oldSensorHeight = 0;
@@ -13,41 +14,27 @@ String senderString = "";
 ArrayList<Character> sender;
 ArrayList<Character> receiver;
 PImage img;
-headerGenerator hg;
+
+
 
 void setup(){
   size(800,480);
-  //fullScreen();
   font = createFont("Roboto-Bold.ttf", 22); 
-  hg = new headerGenerator();
+ 
   sender = new ArrayList<Character>();
   receiver = new ArrayList<Character>();
   background(255);
   frameRate(60);
-   
-  //println(Serial.list());
-  //String Sensor = Serial.list()[2];
-  myPort = new Serial(this,Serial.list()[4],115200);
-  
+  sensorPort = new Serial(this,Serial.list()[3],115200);
 }
 
 
-
 void draw(){
-       //whit boxes
-    //fill(255);
-    //noStroke();
-    //rect(0,0,width, 40);
-    //rect(0,0,width, height-40);
-      //text
-    
       fill(0);
       textFont(font);
       receiverString = getNameString(receiver);
       senderString = getNameString(sender);
       
-      
-     
     if(scene == 1){
         xPos = 1;
         background(255);
@@ -56,6 +43,7 @@ void draw(){
      }
      
      if(scene == 2){
+       
        background(255);
        defaultScreen();
         text("This is a special letter for you:",40,80);
@@ -66,7 +54,7 @@ void draw(){
      }
     if(scene == 3){
       
-    
+      sensorPort.write(0);
        //---------------------------------------------------------------------------------------------------drawing the diagram
       stroke(0);
       strokeWeight(10);
@@ -88,19 +76,17 @@ void draw(){
         xPos ++;
       }
       //-----------------------------------------------------------------------------------------------------------------------------
-
     }
     
-    if(scene == 4){
-      println(scene);
-      saveImage();
-      hg.generateHeader();
+    if(scene == 4){  
+      sensorPort.write(1);
+      println("logo printing.");
       delay(5000);
+    //----------------------------send signal to let arduino stop printing
       scene = 5;
     }
     
     if (scene ==5){  
-      
       background(255);
       text("Your letter is printing... ",width/2,height/2);
       text("Press space to write a letter. ",width/2,height/2+40);
@@ -113,16 +99,16 @@ void draw(){
 
 void serialEvent(Serial myPort){
   String inString = myPort.readStringUntil('\n');
+  if(inString == "1"){
+    println("got it.");
+  }
   
   if(inString !=null){
     inString = trim(inString);
-    //println(inString);
     int currentSensorRate = int(inString);
-    //println(currentSensorRate);    
-  
     //draw
    SensorHeight = map(currentSensorRate,0,1000,100,400);  
-   //println(SensorHeight); 
+   
    
   }
 }
@@ -134,7 +120,6 @@ String getNameString(ArrayList<Character> name){
     char temp = name.get(i);
     String sTemp = str(temp);
     resultString += sTemp;
-    
   }
   return resultString;
 }
@@ -146,7 +131,6 @@ void keyPressed(){
   }
   
   if(scene == 1 && key == BACKSPACE){
-    println("delete");
     receiver.remove(receiver.size()-1);
   }
   
@@ -156,12 +140,27 @@ void keyPressed(){
   
   if(scene == 1 && key == ENTER){
     scene += 1;
-    println(scene);
+    //send receiver to arduino------------------------------
+    
+    sensorPort.write(2);
+    for(int i = 0; i < receiver.size(); i++){
+      sensorPort.write(receiver.get(i));
+    }
+    
+    //end----------------------------------------------------
+   
   }else if(scene == 2 && key == ENTER){
+    //send sender to arduino------------------------------
+    
+    sensorPort.write(3);
+    for(int i = 0; i < sender.size(); i++){
+      sensorPort.write(sender.get(i));
+    }
+    
+    //end----------------------------------------------------
      scene += 1;
      background(255);
      defaultScreen();
-     println(scene);
   }
   
   if(scene == 2 && inputCheck(key)){
@@ -170,11 +169,8 @@ void keyPressed(){
   
   if(scene == 5 && key == ' '){
     scene =1;
-    println(scene);
-  }
-  
-  
 
+  }
 }
 
 
@@ -192,13 +188,6 @@ boolean inputCheck(Character c){
     }
 }
 
-void saveImage(){
-  save("here.png");
-  PImage graphPrev = loadImage("here.png");
-  PImage graphNew = graphPrev.get();
-  graphNew.resize(350,218);
-  graphNew.save("data/graphNew.png"); 
-}
 
 void defaultScreen(){
   if(receiverString == ""){
