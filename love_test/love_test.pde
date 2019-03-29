@@ -15,6 +15,8 @@ ArrayList<Character> sender;
 ArrayList<Character> receiver;
 PImage img;
 
+int startTime;
+
 
 
 void setup(){
@@ -26,10 +28,13 @@ void setup(){
   background(255);
   frameRate(60);
   sensorPort = new Serial(this,Serial.list()[3],115200);
+  printerPort = new Serial(this, Serial.list()[0],19200);
 }
 
 
 void draw(){
+  
+   
       fill(0);
       textFont(font);
       receiverString = getNameString(receiver);
@@ -52,8 +57,17 @@ void draw(){
           text("Sincerely,", width-370,height-80);
         }
      }
+     
+     
+     if(scene == 9){
+        background(255);
+        defaultScreen();
+        text("This is a special letter for you:",40,80);
+        text("Put your finger on the green light sensor.",width/2,height/2 - 10);
+        text("If you are ready, press SPACE and wait.",width/2,height/2 + 30);
+     }
+     
     if(scene == 3){
-      
       sensorPort.write(0);
        //---------------------------------------------------------------------------------------------------drawing the diagram
       stroke(0);
@@ -68,7 +82,6 @@ void draw(){
       ellipse(xPos, yPos+random(-8,8),r,r);
       
       oldSensorHeight = SensorHeight;
-      //xPos ++;
       
       if(xPos >= width){
         scene = 4;
@@ -79,37 +92,43 @@ void draw(){
     }
     
     if(scene == 4){  
-      sensorPort.write(1);
-      println("logo printing.");
-      delay(5000);
     //----------------------------send signal to let arduino stop printing
       scene = 5;
+      //startTime = millis();
     }
     
-    if (scene ==5){  
+    if (scene == 5){ 
       background(255);
-      text("Your letter is printing... ",width/2,height/2);
-      text("Press space to write a letter. ",width/2,height/2+40);
+      //int timeLeft = millis() - startTime;
+      //if(timeLeft < 20000){
+        //text(timeLeft/1000, width/2, height/2 - 20);
+        //text("Your letter is printing... ",width/2,height/2);
+        text("Press play button to write a letter... ",width/2,height/2);
+      //}
       sender = new ArrayList<Character>();
       receiver = new ArrayList<Character>();
-
     }
-  
 }
 
-void serialEvent(Serial myPort){
-  String inString = myPort.readStringUntil('\n');
-  if(inString == "1"){
-    println("got it.");
-  }
+void serialEvent(Serial thisPort){
+  if(thisPort == sensorPort){
+    String inString = thisPort.readStringUntil('\n');
+   
   
-  if(inString !=null){
-    inString = trim(inString);
-    int currentSensorRate = int(inString);
+    if(inString !=null){
+      inString = trim(inString);
+      println(inString);
+      int reset = int(inString);
+      println(reset);
+      if(reset == 12385){
+        println("got it!");
+        scene = 1;
+      }else{
+        int currentSensorRate = int(inString);
     //draw
-   SensorHeight = map(currentSensorRate,0,1000,100,400);  
-   
-   
+       SensorHeight = map(currentSensorRate,0,1000,100,400);  
+      }
+    }
   }
 }
 
@@ -131,11 +150,15 @@ void keyPressed(){
   }
   
   if(scene == 1 && key == BACKSPACE){
-    receiver.remove(receiver.size()-1);
+    if(receiver.size() > 0){
+      receiver.remove(receiver.size()-1);
+    }
   }
   
    if(scene == 2 && key == BACKSPACE){
-    sender.remove(sender.size()-1);
+     if(sender.size() > 0){
+      sender.remove(sender.size()-1);
+     }
   }
   
   if(scene == 1 && key == ENTER){
@@ -158,19 +181,24 @@ void keyPressed(){
     }
     
     //end----------------------------------------------------
-     scene += 1;
-     background(255);
-     defaultScreen();
+     scene = 9;
+     delay(5000);
+     sensorPort.write(1);
   }
   
   if(scene == 2 && inputCheck(key)){
     sender.add(key);
   }
   
-  if(scene == 5 && key == ' '){
-    scene =1;
-
+  if(scene == 9 && key == ' '){
+     background(255);
+     defaultScreen();
+     delay(5000);
+     sensorPort.write(0);
+     scene = 3;
   }
+  
+ 
 }
 
 
