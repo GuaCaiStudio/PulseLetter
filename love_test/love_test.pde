@@ -4,6 +4,9 @@ import processing.pdf.*;
 Serial sensorPort;
 Serial printerPort;
 PFont font;
+PFont fontBold;
+PFont fontLong;
+PFont caption;
 int xPos = 1;
 float oldSensorHeight = 0;
 float SensorHeight;
@@ -21,8 +24,10 @@ int startTime;
 
 void setup(){
   size(800,480);
-  font = createFont("Roboto-Bold.ttf", 22); 
- 
+  font = createFont("Roboto-Regular.ttf", 18); 
+  fontBold = createFont("Roboto-Bold.ttf",22);
+  fontLong = createFont("Roboto-Regular.ttf",18);
+  caption = createFont("Roboto-Light.ttf",14);
   sender = new ArrayList<Character>();
   receiver = new ArrayList<Character>();
   background(255);
@@ -44,7 +49,10 @@ void draw(){
         xPos = 1;
         background(255);
         defaultScreen();
-        text("Who would you like to write this letter to? ",width/2,height/2);
+        textFont(fontBold);//Write in Bold
+        text("Who would you like to write this letter to? ",width/2-200,height/2);
+        textFont(caption);//Write caption
+        text("(Type then press ENTER)",width/2-80,height/2 + 30);
      }
      
      if(scene == 2){
@@ -52,9 +60,13 @@ void draw(){
        background(255);
        defaultScreen();
         text("This is a special letter for you:",40,80);
-        text("And what's your name? ",width/2,height/2);
+        textFont(fontBold);//Write in Bold
+        text("And what's your name? ",width/2-120,height/2);
+        textFont(caption);//Write caption
+        text("(Type then press ENTER)",width/2-80,height/2 +30);
+        textFont(font);//Write in Regular
         if(senderString == " "){
-          text("Sincerely,", width-370,height-80);
+          text("Sincerely,", width-80,height-60);
         }
      }
      
@@ -63,20 +75,23 @@ void draw(){
         background(255);
         defaultScreen();
         text("This is a special letter for you:",40,80);
-        text("Put your finger on the green light sensor.",width/2,height/2 - 10);
-        text("If you are ready, press SPACE and wait.",width/2,height/2 + 30);
+        textFont(fontBold);//Write in Bold
+        text("Now, place your finger on the green light sensor",width/2-238,height/2);
+        textFont(caption);//Write caption
+        text("(If you are ready, press SPACE and wait.)",width/2-130,height/2 +30);
+        textFont(font);
      }
      
     if(scene == 3){
       sensorPort.write(0);
        //---------------------------------------------------------------------------------------------------drawing the diagram
       stroke(0);
-      strokeWeight(10);
+      strokeWeight(2);
       float yPos = height- SensorHeight;
       float OldyPos = height- oldSensorHeight;
       line(xPos - 1, OldyPos, xPos, yPos);
       
-      fill(map(SensorHeight,250,300,100,255),random(0,100),random(0,100),30);
+      fill(map(SensorHeight,100,400,100,255),random(0,100),random(0,100),30);
       float r = SensorHeight/30;
       noStroke();
       ellipse(xPos, yPos+random(-8,8),r,r);
@@ -84,6 +99,7 @@ void draw(){
       oldSensorHeight = SensorHeight;
       
       if(xPos >= width){
+        startTime = millis();
         scene = 4;
       } else {
         xPos ++;
@@ -93,8 +109,14 @@ void draw(){
     
     if(scene == 4){  
     //----------------------------send signal to let arduino stop printing
-      scene = 5;
-      //startTime = millis();
+    background(255);
+     textFont(fontLong);
+     text("Your letter is now part of the longest letter of many collective feelings.",width/2-275,height/2);
+     //text("Press the button to create a letter... ",width/2-180,height/2);
+     int timeLeft = millis() - startTime;
+     if(timeLeft > 10000){
+        scene = 5;
+     }
     }
     
     if (scene == 5){ 
@@ -103,7 +125,9 @@ void draw(){
       //if(timeLeft < 20000){
         //text(timeLeft/1000, width/2, height/2 - 20);
         //text("Your letter is printing... ",width/2,height/2);
-        text("Press play button to write a letter... ",width/2,height/2);
+        textFont(fontBold);
+        text("Press the button to create a letter... ",width/2-180,height/2);
+        textFont(font);
       //}
       sender = new ArrayList<Character>();
       receiver = new ArrayList<Character>();
@@ -126,7 +150,7 @@ void serialEvent(Serial thisPort){
       }else{
         int currentSensorRate = int(inString);
     //draw
-       SensorHeight = map(currentSensorRate,0,1000,100,400);  
+       SensorHeight = map(currentSensorRate,200,1100,50,400);  
       }
     }
   }
@@ -228,6 +252,6 @@ void defaultScreen(){
       
       if(senderString != " "){
         String result = "Sincerely, " + senderString;
-        text(result,width-300,height-80);
+        text(result,width-280,height-60);
       }
 }

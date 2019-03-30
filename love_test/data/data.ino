@@ -47,10 +47,12 @@ void setup() {
   getReceiver = false;
   getSender = false;
   printing = false;
-  
+
   pinMode(buttonPin, INPUT);
-  pinMode(buttonPin,HIGH);
+  pinMode(buttonPin, HIGH);
   Serial.println(12385);
+  printer.println(F("    "));
+  printer.println(F("    "));
 
 }
 
@@ -103,14 +105,16 @@ void loop() {
       counter++;
       if (counter % 2 == 0 && counter <= 40) {
         pulseData[counter / 2] = analogValue;
-        int temp = map(analogValue, 500, 1100, 1, 30);
+        int temp = map(analogValue, 300, 1100, 1, 31);
         String tempString = "";
         for (int i = 0; i < temp; i++) {
           tempString += " ";
         }
         printer.println(tempString);
 
+
       }
+
       delay(300);
     }
     //    ------------------------------------------------
@@ -135,6 +139,8 @@ void printLogo(String name) {
   //name:
   logoPrinter.justify('C');
   logoPrinter.println(newName);
+  
+  printer.println("A Letter To " + receiver + ":");
 
   //Thank you Message
   logoPrinter.doubleHeightOn();
@@ -149,11 +155,11 @@ void printLogo(String name) {
 
 
   //guacai logo
-  //  logoPrinter.printBitmap(printer_guacailogo_width, printer_guacailogo_height, printer_guacailogo_data);
+  logoPrinter.printBitmap(printer_guacailogo_width, printer_guacailogo_height, printer_guacailogo_data);
 
   //Ending:
   logoPrinter.println(F("Art Impact, Boston, 2019"));
-  logoPrinter.println(F("(Feel free to take it with you)"));
+  logoPrinter.println(F("(Please take this with you.)"));
   logoPrinter.println(F(" "));
   logoPrinter.println(F(" "));
   logoPrinter.println(F("------- Tear here -------"));
